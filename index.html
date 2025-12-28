@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>News Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-6 shadow">
+        <h1 class="text-2xl font-bold">Holiday Shopping News Dashboard</h1>
+        <p class="text-sm">Visualizing scraped Google News headlines</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6">
+        <!-- Chart Section -->
+        <!-- <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">Classification Chart</h2>
+      <canvas id="classificationChart" class="bg-white rounded-lg shadow p-4"></canvas>
+    </section> -->
+    
+
+        <!-- News Cards -->
+        <section id="news-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards will be injected here -->
+        </section>
+
+
+
+        <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Pie Chart -->
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+              <h2 class="text-lg font-semibold mb-2">Classification Pie Chart </h2>
+              <canvas id="classificationPie" class="w-40 h-40"></canvas>
+            </div>
+          
+            <!-- Stock-style Line Chart -->
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+              <h2 class="text-lg font-semibold mb-2">Trend Graph 📈</h2>
+              <canvas id="trendChart" class="w-48 h-32"></canvas>
+            </div>
+          </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-6">
+        <p>&copy; 2025 News Scraper Dashboard</p>
+    </footer>
+
+    <script>
+        // Load JSON file
+        fetch("scraped_news.json")
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById("news-container");
+
+                // Classification counters
+                let christmasCount = 0;
+                let newYearCount = 0;
+                let bothCount = 0;
+                let neitherCount = 0;
+
+                data.scraped_data.forEach(item => {
+                    const headline = item.headline.toLowerCase();
+
+                    const hasChristmas = headline.includes("christmas");
+                    const hasNewYear = headline.includes("new year");
+
+                    if (hasChristmas && hasNewYear) {
+                        bothCount++;
+                    } else if (hasChristmas) {
+                        christmasCount++;
+                    } else if (hasNewYear) {
+                        newYearCount++;
+                    } else {
+                        neitherCount++;
+                    }
+
+                    // Create card
+                    const card = document.createElement("div");
+                    card.className = "bg-white rounded-lg shadow p-4 hover:shadow-lg transition";
+                    card.innerHTML = `
+            <h2 class="text-lg font-semibold mb-2">${item.headline}</h2>
+            <p class="text-sm text-gray-600 mb-2">${item.snippet || "No snippet available"}</p>
+            <a href="${item.url}" target="_blank" class="text-blue-500 hover:underline">Read more</a>
+            <p class="text-xs text-gray-400 mt-2">${item.date}</p>
+          `;
+                    container.appendChild(card);
+                });
+                // PIE CHART
+                const pieCtx = document.getElementById("classificationPie").getContext("2d");
+                new Chart(pieCtx, {
+                    type: "pie",
+                    data: {
+                        labels: ["Christmas 🎄", "New Year 🎆", "Both 🎁", "Neither ❓"],
+                        datasets: [{
+                            data: [christmasCount, newYearCount, bothCount, neitherCount],
+                            backgroundColor: [
+                                "rgba(255, 99, 132, 0.7)",
+                                "rgba(54, 162, 235, 0.7)",
+                                "rgba(255, 206, 86, 0.7)",
+                                "rgba(75, 192, 192, 0.7)"
+                            ],
+                            borderColor: "#fff",
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: "bottom" },
+                            title: { display: true, text: "Article Classification" }
+                        }
+                    }
+                });
+
+                // STOCK-STYLE LINE CHART
+                // Example: count articles per day (simplified demo)
+                const dates = data.scraped_data.map(item => item.date || "Unknown");
+                const countsByDate = {};
+                dates.forEach(d => {
+                    countsByDate[d] = (countsByDate[d] || 0) + 1;
+                });
+                const lineLabels = Object.keys(countsByDate);
+                const lineValues = Object.values(countsByDate);
+
+                const lineCtx = document.getElementById("trendChart").getContext("2d");
+                new Chart(lineCtx, {
+                    type: "line",
+                    data: {
+                        labels: lineLabels,
+                        datasets: [{
+                            label: "Articles 📰",
+                            data: lineValues,
+                            fill: false,
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            tension: 0.3,
+                            pointStyle: "circle",
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: true, text: "Articles Over Time" }
+                        },
+                        scales: {
+                            x: { display: true, title: { display: true, text: "Date" } },
+                            y: { beginAtZero: true, title: { display: true, text: "Count" } }
+                        }
+                    }
+                });
+
+                // Render Chart.js bar chart
+
+
+      
+            })
+            .catch(err => {
+                console.error("Error loading JSON:", err);
+            });
+    </script>
+</body>
+
+</html>
